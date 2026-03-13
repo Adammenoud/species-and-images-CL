@@ -2,11 +2,23 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def get_fct(colx,colf,df,mean=False):
-    if mean:
+def get_fct(colx,colf,df,multiple_values_handling=None):
+
+    if multiple_values_handling=="mean":
         return df.groupby(colx)[colf].mean()
+    
+    if multiple_values_handling=="max":
+        grouped = df.groupby(colx)[colf]
+        sizes = grouped.size()
+        multi_groups = sizes[sizes > 1]
+        if not multi_groups.empty:
+            print("Max was taken over multiple values for these groups:")
+            print(multi_groups)
+        return grouped.max()
+    
     else:
         return df.groupby(colx)[colf]
+    
 '''def quick_plot(df,colx, colf="auc_emb_PR",kind="bar",center=True,title=None, mean=False):
     if title is None:
         title=f'Mean {colf} per {colx}'
@@ -29,10 +41,11 @@ def quick_plot(
     kind="bar",
     center=True,
     title=None,
-    mean=False,
+    multiple_values_handling=None,
     xlabel=None,
     ylabel=None,
-    rename_index=None
+    rename_index=None,
+    rotate_names=True,
 ):
     '''
     xlabel : str or None, default=None
@@ -53,7 +66,7 @@ def quick_plot(
     if title is None:
         title = f"{colf} per {colx}"
 
-    values = get_fct(colx, colf, df, mean)
+    values = get_fct(colx, colf, df, multiple_values_handling)
 
     # Rename x categories if mapping provided
     if rename_index is not None:
@@ -70,6 +83,8 @@ def quick_plot(
         ymin = values.min() - 0.01
         ymax = values.max() + 0.01
         plt.ylim(ymin, ymax)
+    if rotate_names:
+        plt.xticks(rotation=45)
 
     plt.show()
 
@@ -83,7 +98,7 @@ def get_highest(df):
 def quick_filter(df,show_alpha_earth=False, **kwargs):
     filtered_df = df
 
-    for col, val in kwargs.items():
+    for col, val in kwargs.items(): #kwargs is a dictonary
         if val is None:
             continue
         # Treat scalars as a list of one element
